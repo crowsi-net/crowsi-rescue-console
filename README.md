@@ -1,54 +1,28 @@
-# Crowsi Rescue Console
+# crowsi-rescue-console
 
-通常のCoela UI、Hatter、Local Control Bridgeが侵害または停止した場合に使用する、
-out-of-bandのcontainment・credential revocation・recovery authorityです。
+Review emergency containment and recovery through a path independent of normal management.
 
-## 分離モデル
+## What you can do
 
-`SeparationConfig`は通常、Rescue、Recoveryの次の値をすべて別にします。
+- Check rescue-path readiness.
+- Represent explicitly approved emergency operations.
 
-- OS UID/GID
-- Unix socket path
-- signing key ID
-- network namespace
-- IPC namespace
-- executable digest
+## Current scope
 
-Rescueの操作enumには`restore`が存在せず、containとcredential revokeだけです。
-復旧は別のRecovery APIで、異なるhardware-bound鍵と異なるSubjectによる
-完全一致の2承認を要求します。元のPEP `EnforcementReceiptV2`とVerifier
-`SignedReadbackReportV1`のdigestも承認対象へ束縛します。Rescue固有の証拠ラッパーへ
-変換せず、両生産者の署名を別の信頼鍵で直接検証します。domain、deployment、
-incident、resource、command、fence、結果versionが一致し、ReceiptがAppliedかつ
-Read-backがfreshな2 failure-domain quorumの場合だけ復旧を許可します。
+An independently provisioned rescue path and recovery proof are required. The command does not grant emergency authority by itself.
 
-Management lifelineは別の監視鍵で署名され、直近5分以内かつ未失効の場合だけ
-利用できます。自己申告の検証フラグはcontractに存在しません。
-Rescue/Recovery nonceは0600の専用SQLite ledgerで一度だけ消費します。台帳は
-application ID、schema version、STRICT schemaの完全一致を要求し、再起動後も
-trusted-time watermarkの巻戻りを拒否します。
+Package distribution is not activated by this documentation. Use the checked-in source and the declared dependency versions; published availability must be verified separately.
 
-公開操作APIはRescue/RecoveryともUnix streamを受け取り、crate内部で取得した
-kernel peer evidenceを使用します。peer identity型は非公開であり、呼出元が
-文字列やfixtureを操作APIへ渡す経路はありません。Clock実装もsealedです。
-`socket_path`と`signing_key_id`は、root管理listenerとservice identityを起動する
-配備wrapperが照合すべきmanifest値です。このlibrary単体はlistenerや鍵providerを
-起動しないため、その照合証跡がない状態を`ready`へ昇格させません。
+## Getting started
 
-## 検証
+Install Rust 1.97 or newer and make the declared dependencies available. Use the configured private registry when a dependency is not distributed publicly. Run from this repository:
 
-```bash
-# WONDERLAND_ROOT is the workspace checkout root.
-"$WONDERLAND_ROOT/bin/verify-repositories" --rust --tier standard
-cargo run --offline --quiet -- sample-readiness
+```sh
+cargo test --locked
 ```
 
-`sample-readiness`は`external_actions=false`と未配備理由だけを返します。
-ライブラリ単体の`readiness`も物理分離を証明しないため常に`unavailable`です。
+## Documentation and source
 
-## 本番配備条件
+[Usage guide](docs/getting-started.md)
 
-通常経路と異なるOS identity、socket、TPM/HSM key、network/IPC namespace、
-物理または管理専用lifeline、独立電源・名前解決経路、二名以上のRecovery authority、
-PEP Receipt署名鍵とは別blast radiusのread-back署名鍵、署名済みbinary、
-定期的なcontain/revoke/recover演習が必要です。
+[Implementation and public interfaces](src) · [Verification cases](tests) · [Contributing](CONTRIBUTING.md) · [Security reporting](SECURITY.md) · [License](LICENSE) · [Attribution notices](NOTICE)
